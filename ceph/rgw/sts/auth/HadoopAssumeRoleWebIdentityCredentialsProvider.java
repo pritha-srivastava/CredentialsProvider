@@ -56,6 +56,11 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 		String idpUrl = conf.get("fs.s3a.idpUrl");
 		String refreshToken = conf.get("fs.s3a.refreshToken");
 		String refreshTokenFile = conf.get("fs.s3a.refreshTokenFile");
+		String isAccessTokenStr = conf.get("fs.s3a.isAccessToken");
+		boolean isAccessToken = true;
+		if (isAccessTokenStr != null && !isAccessTokenStr.isEmpty()) {
+			isAccessToken = Boolean.parseBoolean(isAccessTokenStr);
+		}
 		
 		logger.trace("roleArn:" + roleArn);
 		logger.trace("roleSessionName: " + roleSessionName);
@@ -69,6 +74,7 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 		logger.trace("idpUrl: " + idpUrl);
 		logger.trace("refreshToken: " + refreshToken);
 		logger.trace("refreshTokenFile: " + refreshTokenFile);
+		logger.trace("isAccessToken: " + isAccessToken);
 
 		EndpointConfiguration endpoint = new EndpointConfiguration(stsEndpoint, "");
         
@@ -87,6 +93,7 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 							.withIdpUrl(idpUrl)
 							.withRefreshToken(refreshToken)
 							.withRefreshTokenFile(refreshTokenFile)
+							.withIsAccessToken(isAccessToken)
 							.build();
     }
 	

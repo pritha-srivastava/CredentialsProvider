@@ -37,7 +37,7 @@ class ShouldDoAsyncTokenRefresh extends SdkPredicate<RefreshTokenResult> {
 
     @Override
     public boolean test(RefreshTokenResult token) {
-        Date expiryTime = token.getAccessTokenExpiration();
+        Date expiryTime = token.getTokenExpiration();
         if (expiryTime != null) {
             long timeRemaining = expiryTime.getTime() - System.currentTimeMillis();
             logger.info("Time remaining to refresh a token in asynchronous mode is: "+ timeRemaining);

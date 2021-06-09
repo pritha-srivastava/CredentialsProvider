@@ -33,6 +33,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 	private final AtomicBoolean refreshInProgress = new AtomicBoolean(false);
 	private final Lock lock = new ReentrantLock();
 	private volatile boolean threadExit = false;
+	private boolean isAccessToken;
 
 	public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -58,7 +59,7 @@ public class RefreshTokenService extends Thread implements Closeable {
         return this.idpUrl;
     }
 
-	public RefreshTokenService (String clientId, String clientSecret, String idpUrl, String refreshToken, String refreshTokenFile) {
+	public RefreshTokenService (String clientId, String clientSecret, String idpUrl, String refreshToken, String refreshTokenFile, boolean isAccessToken) {
 		Properties logProperties = new Properties();
 		
 		try {
@@ -74,6 +75,7 @@ public class RefreshTokenService extends Thread implements Closeable {
         this.idpUrl = idpUrl;
         this.refreshToken = refreshToken;
         this.refreshTokenFile = refreshTokenFile;
+        this.isAccessToken = isAccessToken;
     }
 	
 	private String getRefreshToken() {
@@ -165,7 +167,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 		if (refreshInProgress.compareAndSet(false, true)) {
     		logger.debug("Refreshing access and refresh tokens ...");
 			String accessToken="", idToken="", newRefreshToken="";
-			java.util.Date refreshExpiration = null, accessTokenExpiration = null;
+			java.util.Date refreshExpiration = null, tokenExpiration = null;
 			String refreshToken = getRefreshToken();
 			String error = null;
 			
@@ -205,12 +207,16 @@ public class RefreshTokenService extends Thread implements Closeable {
 						accessToken = obj.getString("access_token");
 						logger.debug("Access Token is: "+ accessToken);
 					}
+					if (obj.has("id_token")) {
+						idToken = obj.getString("id_token");
+						logger.debug("ID Token is: "+ idToken);
+					}
 					if (obj.has("expires_in")) {
 						String expiration = obj.getString("expires_in");
 						Integer expiration_seconds = Integer.parseInt(expiration);
 						long access_millis = System.currentTimeMillis() + (expiration_seconds * 1000);  
-						accessTokenExpiration = new Date(access_millis);
-						logger.debug("Access Expiration Time is: "+ accessTokenExpiration);
+						tokenExpiration = new Date(access_millis);
+						logger.debug("Access Expiration Time is: "+ tokenExpiration);
 					}
 					if (obj.has("refresh_token")) {
 						newRefreshToken = obj.getString("refresh_token");
@@ -261,12 +267,20 @@ public class RefreshTokenService extends Thread implements Closeable {
 	    		this.result = null;
 	    	} else {
 		    	if (this.result == null) {
-		    		this.result = new RefreshTokenResult(accessToken, idToken, newRefreshToken, refreshExpiration, accessTokenExpiration);
+				if (this.isAccessToken) {
+					this.result = new RefreshTokenResult(accessToken, newRefreshToken, refreshExpiration, tokenExpiration);
+				} else
+				{
+					this.result = new RefreshTokenResult(idToken, newRefreshToken, refreshExpiration, tokenExpiration);
+				}
 		    	} else {
-			    	this.result.setAccessToken(accessToken);
-			    	this.result.setIdToken(idToken);
+				if (this.isAccessToken) {
+					this.result.setToken(accessToken);
+				} else {
+					this.result.setToken(idToken);
+				}
 			    	this.result.setRefreshToken(newRefreshToken);
-			    	this.result.setAccessTokenExpiration(accessTokenExpiration);
+				this.result.setTokenExpiration(tokenExpiration);
 			    	this.result.setRefreshExpiration(refreshExpiration);
 		    	}
 		    	this.refreshToken = newRefreshToken;

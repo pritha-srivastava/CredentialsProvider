@@ -33,7 +33,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCredentialsProvider, Closeable {
 	
-	static final Logger logger = Logger.getLogger(AssumeRoleWebIdentityCredentialsProvider.class);
+    static final Logger logger = Logger.getLogger(AssumeRoleWebIdentityCredentialsProvider.class);
     static final String LOG_PROPERTIES_FILE = "log4j.properties";
 
     /**
@@ -132,7 +132,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
         
         if (builder.refreshToken == null && builder.refreshTokenFile == null &&
         		builder.webIdentityToken == null && builder.webIdentityTokenFile == null) {
-        	logger.error("You must specify a value either for refreshToken(File) or webIdentityToken(File).");
+            logger.error("You must specify a value either for refreshToken(File) or webIdentityToken(File).");
             throw new NullPointerException(
                     "You must specify a value either for refreshToken(File) or webIdentityToken(File)");
         }
@@ -146,7 +146,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     	} else {
     		this.refreshTokenService = null;
     		this.tokenRefreshableTask = null;
-			this.webIdentityTokenFile = builder.webIdentityTokenFile;
+		this.webIdentityTokenFile = builder.webIdentityTokenFile;
 	        this.webIdentityToken = builder.webIdentityToken;
     	}
     	
@@ -182,7 +182,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     
     private static RefreshTokenService buildRefreshTokenService(Builder builder) throws IllegalArgumentException {
         
-        return new RefreshTokenService(builder.clientId, builder.clientSecret, builder.idpUrl, builder.refreshToken, builder.refreshTokenFile);
+        return new RefreshTokenService(builder.clientId, builder.clientSecret, builder.idpUrl, builder.refreshToken, builder.refreshTokenFile, builder.isAccessToken);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     	logger.trace("Refreshing Session ...");
     	if (tokenRefreshableTask != null) {
     		logger.trace("Checking whether to refresh access token...");
-    		this.webIdentityToken = tokenRefreshableTask.getValue().getAccessToken();
+		this.webIdentityToken = tokenRefreshableTask.getValue().getToken();
     	}
         AssumeRoleWithWebIdentityRequest assumeRoleRequest = new AssumeRoleWithWebIdentityRequest()
                 .withRoleArn(this.roleArn)
@@ -254,8 +254,12 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     @Override
     public void close() {
         refreshableTask.close();
-        tokenRefreshableTask.close();
-        refreshTokenService.stopThread();
+        if (tokenRefreshableTask != null) {
+		tokenRefreshableTask.close();
+        }
+        if (refreshTokenService != null) {
+		refreshTokenService.stopThread();
+        }
     }
 
     /**
@@ -277,6 +281,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
         private String refreshToken;
         private String refreshTokenFile;
         private AWSSecurityTokenService sts;
+        private boolean isAccessToken = true;
 
         public Builder(String roleArn, String roleSessionName) {
             if (roleArn == null || roleSessionName == null) {
@@ -345,6 +350,11 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
             return this;
         }
         
+        public Builder withIsAccessToken(boolean isAccessToken) {
+            this.isAccessToken = isAccessToken;
+            return this;
+        }
+
         /**
          * Build the configured provider
          *

@@ -1,38 +1,28 @@
 package ceph.rgw.sts.auth;
 
 public class RefreshTokenResult {
-	private String accessToken;
+	private String token; //Access Token or ID Token based on flag
 	private String refreshToken;
-	private String idToken;
 	private java.util.Date refreshExpiration;
-	private java.util.Date accessTokenExpiration;
+	private java.util.Date tokenExpiration;
 	
-	public RefreshTokenResult(String accessToken, String idToken, String refreshToken, java.util.Date refreshExpiration, java.util.Date accessTokenExpiration) {
-		this.accessToken = accessToken;
+	public RefreshTokenResult(String token, String refreshToken, java.util.Date refreshExpiration, java.util.Date tokenExpiration) {
+		this.token = token;
 		this.refreshToken = refreshToken;
-		this.idToken = idToken;
 		this.refreshExpiration = refreshExpiration;
-		this.accessTokenExpiration = accessTokenExpiration;
+		this.tokenExpiration = tokenExpiration;
 	}
 
-	public void setAccessToken(String accessToken) {
-		this.accessToken = accessToken;
-	}
-	
-	public void setIdToken(String idToken) {
-		this.idToken = idToken;	
+	public void setToken(String token) {
+		this.token = token;
 	}
 	
 	public void setRefreshToken(String refreshToken) {
 		this.refreshToken = refreshToken;
 	}
 	
-	public String getAccessToken() {
-		return this.accessToken;
-	}
-	
-	public String getIdToken() {
-		return this.idToken;
+	public String getToken() {
+		return this.token;
 	}
 	
 	public String getRefreshToken() {
@@ -47,11 +37,11 @@ public class RefreshTokenResult {
 		this.refreshExpiration = refreshExpiration;
 	}
 	
-	public java.util.Date getAccessTokenExpiration() {
-		return this.accessTokenExpiration;
+	public java.util.Date getTokenExpiration() {
+		return this.tokenExpiration;
 	}
 	
-	public void setAccessTokenExpiration(java.util.Date accessTokenExpiration) {
-		this.accessTokenExpiration = accessTokenExpiration;
+	public void setTokenExpiration(java.util.Date tokenExpiration) {
+		this.tokenExpiration = tokenExpiration;
 	}
 }

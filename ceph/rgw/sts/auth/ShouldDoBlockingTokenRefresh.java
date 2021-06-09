@@ -39,7 +39,7 @@ class ShouldDoBlockingTokenRefresh extends SdkPredicate<RefreshTokenResult> {
     public boolean test(RefreshTokenResult token) {
     	logger.info("Testing if token should be refreshed ...");
         return token == null ||
-               expiring(token.getAccessTokenExpiration());
+               expiring(token.getTokenExpiration());
     }
 
     /**
