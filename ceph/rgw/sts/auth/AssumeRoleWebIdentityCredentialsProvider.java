@@ -63,6 +63,8 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     
     private final Integer durationInSeconds;
     
+    private String roleArnFile;
+    
     private final Callable<SessionCredentialsHolder> refreshCallable = new Callable<SessionCredentialsHolder>() {
         @Override
         public SessionCredentialsHolder call() throws Exception {
@@ -128,6 +130,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
         this.roleSessionName = builder.roleSessionName;
         this.durationInSeconds = builder.durationInSeconds;
         this.policy = builder.policy;
+        this.roleArnFile = builder.roleArnFile;
         this.securityTokenService = buildStsClient(builder);
         
         if (builder.refreshToken == null && builder.refreshTokenFile == null &&
@@ -182,7 +185,7 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     
     private static RefreshTokenService buildRefreshTokenService(Builder builder) throws IllegalArgumentException {
         
-        return new RefreshTokenService(builder.clientId, builder.clientSecret, builder.idpUrl, builder.refreshToken, builder.refreshTokenFile, builder.isAccessToken);
+        return new RefreshTokenService(builder.clientId, builder.clientSecret, builder.idpUrl, builder.refreshToken, builder.refreshTokenFile, builder.refreshExpirationInMins, builder.isAccessToken);
     }
 
     @Override
@@ -207,10 +210,10 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     	logger.trace("Refreshing Session ...");
     	if (tokenRefreshableTask != null) {
     		logger.trace("Checking whether to refresh access token...");
-		this.webIdentityToken = tokenRefreshableTask.getValue().getToken();
+    		this.webIdentityToken = tokenRefreshableTask.getValue().getToken();
     	}
         AssumeRoleWithWebIdentityRequest assumeRoleRequest = new AssumeRoleWithWebIdentityRequest()
-                .withRoleArn(this.roleArn)
+                .withRoleArn(getRoleArn())
                 .withWebIdentityToken(getWebIdentityToken())
                 .withRoleSessionName(this.roleSessionName)
                 .withDurationSeconds(this.durationInSeconds)
@@ -246,6 +249,27 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
             }
         }
     }
+    
+    private String getRoleArn() {
+    	if (this.roleArn != null && !this.roleArn.isEmpty()) {
+    		return this.roleArn;
+    	}
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(this.roleArnFile), "UTF-8"));
+            return br.readLine();
+        } catch (FileNotFoundException e) {
+            throw new SdkClientException("Unable to locate specified role arn file: " + this.roleArnFile);
+        } catch (IOException e) {
+            throw new SdkClientException("Unable to read role arn from file: " + this.roleArnFile);
+        } finally {
+            try {
+                br.close();
+            } catch (Exception ignored) {
+
+            }
+        }
+    }
 
     /**
      * Shut down this credentials provider, shutting down the thread that performs asynchronous credential refreshing. This
@@ -255,10 +279,10 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
     public void close() {
         refreshableTask.close();
         if (tokenRefreshableTask != null) {
-		tokenRefreshableTask.close();
+        	tokenRefreshableTask.close();
         }
         if (refreshTokenService != null) {
-		refreshTokenService.stopThread();
+        	refreshTokenService.stopThread();
         }
     }
 
@@ -282,14 +306,21 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
         private String refreshTokenFile;
         private AWSSecurityTokenService sts;
         private boolean isAccessToken = true;
+        private long refreshExpirationInMins = 0;
+        private final String roleArnFile;
 
-        public Builder(String roleArn, String roleSessionName) {
-            if (roleArn == null || roleSessionName == null) {
+        public Builder(String roleArn, String roleSessionName, String roleArnFile) {
+            if (roleSessionName == null) {
                 throw new NullPointerException(
-                        "You must specify a value for roleArn and roleSessionName");
+                        "You must specify a value for roleSessionName");
+            }
+            if (roleArn == null && roleArnFile == null) {
+                throw new NullPointerException(
+                        "You must specify a value for roleArn or roleArnFile");
             }
             this.roleArn = roleArn;
             this.roleSessionName = roleSessionName;
+            this.roleArnFile = roleArnFile;
         }
 
         /**
@@ -354,7 +385,12 @@ public class AssumeRoleWebIdentityCredentialsProvider implements AWSSessionCrede
             this.isAccessToken = isAccessToken;
             return this;
         }
-
+        
+        public Builder withRefreshExpiration(long refreshExpirationInMins) {
+            this.refreshExpirationInMins = refreshExpirationInMins;
+            return this;
+        }
+        
         /**
          * Build the configured provider
          *

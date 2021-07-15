@@ -61,6 +61,12 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 		if (isAccessTokenStr != null && !isAccessTokenStr.isEmpty()) {
 			isAccessToken = Boolean.parseBoolean(isAccessTokenStr);
 		}
+		long refreshExpirationMins = 0;
+		String refreshExpiration = conf.get("fs.s3a.refreshTokenExpirationInMins");
+		if (refreshExpiration != null && !refreshExpiration.isEmpty()) {
+			refreshExpirationMins = Integer.parseInt(refreshExpiration);
+		}
+		String roleArnFile = conf.get("fs.s3a.assumed.role.arnfile");
 		
 		logger.trace("roleArn:" + roleArn);
 		logger.trace("roleSessionName: " + roleSessionName);
@@ -75,6 +81,8 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 		logger.trace("refreshToken: " + refreshToken);
 		logger.trace("refreshTokenFile: " + refreshTokenFile);
 		logger.trace("isAccessToken: " + isAccessToken);
+		logger.trace("refreshExpirationMins: " + refreshExpirationMins);
+		logger.trace("roleArnFile: " + roleArnFile);
 
 		EndpointConfiguration endpoint = new EndpointConfiguration(stsEndpoint, "");
         
@@ -82,7 +90,7 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
         								.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")))
         								.withEndpointConfiguration(endpoint)
         								.build();
-		credsProvider = new AssumeRoleWebIdentityCredentialsProvider.Builder(roleArn, roleSessionName)
+		credsProvider = new AssumeRoleWebIdentityCredentialsProvider.Builder(roleArn, roleSessionName, roleArnFile)
 							.withStsClient(sts)
 							.withPolicy(policy)
 							.withDurationSeconds(durationInSeconds)
@@ -94,6 +102,7 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 							.withRefreshToken(refreshToken)
 							.withRefreshTokenFile(refreshTokenFile)
 							.withIsAccessToken(isAccessToken)
+							.withRefreshExpiration(refreshExpirationMins)
 							.build();
     }
 	

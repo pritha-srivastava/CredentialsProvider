@@ -34,6 +34,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 	private final Lock lock = new ReentrantLock();
 	private volatile boolean threadExit = false;
 	private boolean isAccessToken;
+	private long refreshExpirationInMins;
 
 	public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -59,7 +60,7 @@ public class RefreshTokenService extends Thread implements Closeable {
         return this.idpUrl;
     }
 
-	public RefreshTokenService (String clientId, String clientSecret, String idpUrl, String refreshToken, String refreshTokenFile, boolean isAccessToken) {
+	public RefreshTokenService (String clientId, String clientSecret, String idpUrl, String refreshToken, String refreshTokenFile, long refreshExpirationInMins, boolean isAccessToken) {
 		Properties logProperties = new Properties();
 		
 		try {
@@ -76,6 +77,7 @@ public class RefreshTokenService extends Thread implements Closeable {
         this.refreshToken = refreshToken;
         this.refreshTokenFile = refreshTokenFile;
         this.isAccessToken = isAccessToken;
+	this.refreshExpirationInMins = refreshExpirationInMins;
     }
 	
 	private String getRefreshToken() {
@@ -198,7 +200,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-	    	while(line != null){
+	    	while(line != null) {
 	    		logger.trace("Output line is: " + line);
 	    		new_sb.append(line).append("\n");
 	            try {
@@ -227,7 +229,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 						Integer expiration_seconds = Integer.parseInt(expiration);
 						long refresh_millis = System.currentTimeMillis() + (expiration_seconds * 1000);  
 						refreshExpiration = new Date(refresh_millis);
-						logger.debug("Refresh Expiration Time is: "+ refreshExpiration);
+						logger.debug("Refresh Expiration Time in token is: "+ refreshExpiration);
 					}
 					if (obj.has("error")) {
 						error = obj.getString("error");
@@ -266,26 +268,37 @@ public class RefreshTokenService extends Thread implements Closeable {
 	    	if (error != null && !error.isEmpty()) {
 	    		this.result = null;
 	    	} else {
+	    		if (refreshExpiration == null) {
+	    			if (this.refreshExpirationInMins != 0) {
+		    			long refresh_millis = System.currentTimeMillis() + (this.refreshExpirationInMins * 60 * 1000);  
+						refreshExpiration = new Date(refresh_millis);
+						logger.debug("Refresh Expiration Time from config option is: "+ refreshExpiration);
+	    			} else {
+	    				logger.debug("No refresh Expiration Time found");
+	    				throw new SdkClientException("No refreshExpirationTime found");
+	    			}
+	    		}
 		    	if (this.result == null) {
-				if (this.isAccessToken) {
-					this.result = new RefreshTokenResult(accessToken, newRefreshToken, refreshExpiration, tokenExpiration);
-				} else
-				{
-					this.result = new RefreshTokenResult(idToken, newRefreshToken, refreshExpiration, tokenExpiration);
-				}
+		    		if (this.isAccessToken) {
+		    			this.result = new RefreshTokenResult(accessToken, newRefreshToken, refreshExpiration, tokenExpiration);
+		    		} else
+		    		{
+		    			this.result = new RefreshTokenResult(idToken, newRefreshToken, refreshExpiration, tokenExpiration);
+		    		}
 		    	} else {
-				if (this.isAccessToken) {
-					this.result.setToken(accessToken);
-				} else {
-					this.result.setToken(idToken);
-				}
+		    		if (this.isAccessToken) {
+		    			this.result.setToken(accessToken);
+		    		} else {
+		    			this.result.setToken(idToken);
+		    		}
 			    	this.result.setRefreshToken(newRefreshToken);
-				this.result.setTokenExpiration(tokenExpiration);
+			    	this.result.setTokenExpiration(tokenExpiration);
 			    	this.result.setRefreshExpiration(refreshExpiration);
 		    	}
 		    	this.refreshToken = newRefreshToken;
-		    	lock.unlock();
+		    	
 	    	}
+	    	lock.unlock();
 	    	refreshInProgress.set(false);
 	    	logger.trace("refreshToken Exiting ... ");
 		}
