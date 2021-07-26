@@ -19,22 +19,22 @@ import org.apache.log4j.PropertyConfigurator;
 
 public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessionCredentialsProvider {
 	static final Logger logger = Logger.getLogger(HadoopAssumeRoleWebIdentityCredentialsProvider.class);
-    static final String LOG_PROPERTIES_FILE = "log4j.properties";
+    	static final String LOG_PROPERTIES_FILE = "log4j.properties";
 
 	public static final String NAME
     = "ceph.rgw.sts.auth.HadoopAssumeRoleWebIdentityCredentialsProvider";
 	private AssumeRoleWebIdentityCredentialsProvider credsProvider;
-	public HadoopAssumeRoleWebIdentityCredentialsProvider(Configuration conf) {
+	public HadoopAssumeRoleWebIdentityCredentialsProvider(Configuration conf) throws IOException {
 		Properties logProperties = new Properties();
 		
 		try {
-            // load log4j properties configuration file
-            logProperties.load(new FileInputStream(LOG_PROPERTIES_FILE));
-            PropertyConfigurator.configure(logProperties);
-            logger.info("Logging initialized.");
-        } catch (IOException e) {
-            logger.error("Unable to load logging property :", e);
-        }
+            		// load log4j properties configuration file
+            		logProperties.load(new FileInputStream(LOG_PROPERTIES_FILE));
+            		PropertyConfigurator.configure(logProperties);
+            		logger.info("Logging initialized.");
+        	} catch (IOException e) {
+            		logger.error("Unable to load logging property :", e);
+        	}
 
 		String roleArn = conf.get(org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_ARN);
 		String roleSessionName = conf.get(org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_SESSION_NAME);
@@ -48,13 +48,32 @@ public class HadoopAssumeRoleWebIdentityCredentialsProvider implements AWSSessio
 		}
 		String policy = conf.get(org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_POLICY);
 		String webIdentityTokenFile = conf.get("fs.s3a.webidentitytokenfile");
-		String webIdentityToken = conf.get("fs.s3a.webidentitytoken");
+		char[] webIdentityTokenArr = null;
+		String webIdentityToken = null;
+		try {
+			webIdentityTokenArr = conf.getPassword("fs.s3a.webidentitytoken");
+			if (webIdentityTokenArr != null) {
+				webIdentityToken = String.valueOf(webIdentityTokenArr);
+			}
+		} catch (IOException e) {
+			throw new IOException("Cannot find webIdentityToken: ", e);
+		}
+		 
 		String stsEndpoint = conf.get(org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_STS_ENDPOINT);
 		
 		String clientId = conf.get("fs.s3a.clientId");
 		String clientSecret = conf.get("fs.s3a.clientSecret");
 		String idpUrl = conf.get("fs.s3a.idpUrl");
-		String refreshToken = conf.get("fs.s3a.refreshToken");
+		char[] refreshTokenArr = null;
+		String refreshToken = null;
+		try {
+			refreshTokenArr = conf.getPassword("fs.s3a.refreshToken");
+			if (refreshTokenArr != null) {
+				refreshToken = String.valueOf(refreshTokenArr);
+			}
+		} catch (IOException e) {
+			throw new IOException("Cannot find refreshToken: ", e);
+		}
 		String refreshTokenFile = conf.get("fs.s3a.refreshTokenFile");
 		String isAccessTokenStr = conf.get("fs.s3a.isAccessToken");
 		boolean isAccessToken = true;
