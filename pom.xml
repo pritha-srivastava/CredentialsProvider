@@ -8,9 +8,18 @@
     <sourceDirectory>ceph/rgw/sts/auth</sourceDirectory>
     <plugins>
       <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version>
+            <configuration>
+                <source>11</source>
+                <target>11</target>
+                <debug>true</debug>
+            </configuration>
+        </plugin>
+      <plugin>
 	<artifactId>maven-assembly-plugin</artifactId>
 	<version>2.2</version>
-        <configuration>
+	<configuration>
           <archive>
             <manifest>
               <mainClass>ceph.rgw.sts.auth.HadoopAssumeRoleWebIdentityCredentialsProvider</mainClass>
@@ -29,24 +38,42 @@
           </execution>
        </executions>
       </plugin>
+      <!-- Includes the runtime dependencies -->
+      <plugin>
+        <groupId>com.jolira</groupId>
+        <artifactId>onejar-maven-plugin</artifactId>
+        <version>1.4.4</version>
+        <executions>
+	  <execution>
+	    <configuration>
+              <mainClass>ceph.rgw.sts.auth.HadoopAssumeRoleWebIdentityCredentialsProvider</mainClass>
+	      <attachToBuild>false</attachToBuild>
+	    </configuration>
+            <goals>
+              <goal>one-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>	    
   </build>
   <properties>
-   <maven.compiler.source>1.6</maven.compiler.source>
-   <maven.compiler.target>1.6</maven.compiler.target>
+   <maven.compiler.source>1.8</maven.compiler.source>
+   <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk</artifactId>
-      <version>1.11.271</version>
-      <scope>compile</scope>
+      <version>1.11.375</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-sts</artifactId>
-      <version>1.11.271</version>
-      <scope>compile</scope>
+      <version>1.11.375</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -58,7 +85,7 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <version>3.1.1</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.json</groupId>
