@@ -3,7 +3,7 @@
   <groupId>ceph.rgw.sts.auth</groupId>
   <artifactId>CredentialsProvider</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <build>
     <sourceDirectory>ceph/rgw/sts/auth</sourceDirectory>
     <plugins>
@@ -86,12 +86,12 @@
     <dependency>
     	<groupId>org.apache.logging.log4j</groupId>
     	<artifactId>log4j-api</artifactId>
-    	<version>2.14.1</version>
+    	<version>2.16.0</version>
     </dependency>
     <dependency>
     	<groupId>org.apache.logging.log4j</groupId>
     	<artifactId>log4j-core</artifactId>
-    	<version>2.14.1</version>
+    	<version>2.16.0</version>
     </dependency>
   </dependencies>
 </project>
