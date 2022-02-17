@@ -173,7 +173,7 @@ public class RefreshTokenService extends Thread implements Closeable {
 			String refreshToken = getRefreshToken();
 			String error = null;
 			
-			String access_command = "curl -k -v -X POST -H Content-Type:application/x-www-form-urlencoded -d scope=openid -d grant_type=refresh_token -d client_id=" + clientId + " -d client_secret=" + clientSecret + " -d refresh_token=" + refreshToken + " " + idpUrl;
+			String access_command = "curl -k -s -S -X POST -H Content-Type:application/x-www-form-urlencoded -d scope=openid -d grant_type=refresh_token -d client_id=" + clientId + " -d client_secret=" + clientSecret + " -d refresh_token=" + refreshToken + " " + idpUrl;
 	        logger.debug("Command to refresh access token is: " + access_command);
 	    	ProcessBuilder new_pb = new ProcessBuilder(access_command.split(" "));
 	    	// errorstream of the process will be redirected to standard output

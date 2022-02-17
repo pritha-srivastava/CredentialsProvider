@@ -3,7 +3,7 @@
   <groupId>ceph.rgw.sts.auth</groupId>
   <artifactId>CredentialsProvider</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.0</version>
+  <version>3.0.0</version>
   <build>
     <sourceDirectory>ceph/rgw/sts/auth</sourceDirectory>
     <plugins>
